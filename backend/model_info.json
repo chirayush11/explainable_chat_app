@@ -1,0 +1,33 @@
+{
+    "baseline": {
+        "r2_score": -0.01,
+        "mae": 5.643,
+        "fairness_error_by_age": {
+            "(18, 30]": 3.386,
+            "(30, 40]": 5.801,
+            "(40, 50]": 5.862,
+            "(50, 60]": 26.037
+        }
+    },
+    "mitigated": {
+        "r2_score": -0.968,
+        "mae": 10.061,
+        "fairness_error_by_age": {
+            "(18, 30]": 6.736,
+            "(30, 40]": 10.272,
+            "(40, 50]": 10.358,
+            "(50, 60]": 41.371
+        },
+        "improvement": {
+            "error_disparity_reduction": -11.983,
+            "improvement_percentage": -52.9
+        }
+    },
+    "limitations": [
+        "Predictions are statistical estimates, not exact outcomes.",
+        "Trained only on historical data from one workplace; may not generalize.",
+        "Linear regression assumes linear relationships."
+    ],
+    "mitigation_applied": true,
+    "mitigation_strategy": "Inverse frequency reweighting by age groups"
+}

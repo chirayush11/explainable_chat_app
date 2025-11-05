@@ -1,0 +1,195 @@
+
+================================================================================
+ABSENTEEISM PREDICTION MODEL - EXPLAINABILITY REPORT
+================================================================================
+
+Generated: 2025-11-05 09:01:14
+
+This report explains what the model learned globally and why it made specific 
+predictions for individual instances. It addresses user questions:
+- WHY: Why did the model predict this value?
+- WHY NOT: Why didn't it predict a different value?
+- WHAT IF: What would happen if feature values changed?
+
+================================================================================
+1. GLOBAL MODEL UNDERSTANDING
+================================================================================
+
+The model learned patterns from 592 training examples to predict 
+absenteeism hours based on workplace and employee attributes.
+
+TOP 5 GLOBAL DRIVERS (Features with highest absolute coefficients):
+
+20. Body mass index
+   - Coefficient: -14.5226
+   - Impact: Higher values of this feature decreases predicted absenteeism
+   - Strength: 14.5226 (absolute coefficient)
+
+18. Weight
+   - Coefficient: 12.5361
+   - Impact: Higher values of this feature increases predicted absenteeism
+   - Strength: 12.5361 (absolute coefficient)
+
+2. Reason for absence
+   - Coefficient: -4.5626
+   - Impact: Higher values of this feature decreases predicted absenteeism
+   - Strength: 4.5626 (absolute coefficient)
+
+12. Disciplinary failure
+   - Coefficient: -4.2099
+   - Impact: Higher values of this feature decreases predicted absenteeism
+   - Strength: 4.2099 (absolute coefficient)
+
+19. Height
+   - Coefficient: -3.6918
+   - Impact: Higher values of this feature decreases predicted absenteeism
+   - Strength: 3.6918 (absolute coefficient)
+
+
+TOP 5 GLOBAL DRIVERS (by SHAP importance):
+
+20. Body mass index
+   - Mean Absolute SHAP: 11.7182
+   - This feature consistently contributes to predictions across all samples
+
+18. Weight
+   - Mean Absolute SHAP: 10.7118
+   - This feature consistently contributes to predictions across all samples
+
+2. Reason for absence
+   - Mean Absolute SHAP: 4.0260
+   - This feature consistently contributes to predictions across all samples
+
+1. ID
+   - Mean Absolute SHAP: 2.6816
+   - This feature consistently contributes to predictions across all samples
+
+9. Age
+   - Mean Absolute SHAP: 2.4130
+   - This feature consistently contributes to predictions across all samples
+
+
+================================================================================
+2. LOCAL EXPLANATION: Why This Specific Prediction?
+================================================================================
+
+Instance Details:
+- Index: 0
+- Predicted Absenteeism: -2.04 hours
+- Actual Absenteeism: 1.00 hours
+- Error: 3.04 hours
+
+Feature Values for This Instance:
+  - ID: 28.0
+  - Reason for absence: 27.0
+  - Month of absence: 1.0
+  - Day of the week: 6.0
+  - Seasons: 2.0
+  - Transportation expense: 225.0
+  - Distance from Residence to Work: 26.0
+  - Service time: 9.0
+  - Age: 28.0
+  - Work load Average/day : 308.593
+
+WHY did the model predict -2.04 hours?
+
+Top 5 Features Driving This Prediction (LIME explanation):
+
+1. Weight <= 69.00
+   - Contribution: -23.1816
+   - This feature decreases the prediction by 23.1816 hours
+
+2. Disciplinary failure <= 0.00
+   - Contribution: 18.9446
+   - This feature increases the prediction by 18.9446 hours
+
+3. 23.00 < Body mass index <= 25.00
+   - Contribution: 8.5001
+   - This feature increases the prediction by 8.5001 hours
+
+4. Education <= 1.00
+   - Contribution: 8.4302
+   - This feature increases the prediction by 8.4302 hours
+
+5. Reason for absence > 26.25
+   - Contribution: -6.2116
+   - This feature decreases the prediction by 6.2116 hours
+
+
+Top 5 Features Driving This Prediction (SHAP explanation):
+
+18. Weight
+   - SHAP Value: -9.5452
+   - This feature decreases the prediction by 9.5452 hours
+
+20. Body mass index
+   - SHAP Value: 8.5711
+   - This feature increases the prediction by 8.5711 hours
+
+2. Reason for absence
+   - SHAP Value: -4.1416
+   - This feature decreases the prediction by 4.1416 hours
+
+9. Age
+   - SHAP Value: -3.5256
+   - This feature decreases the prediction by 3.5256 hours
+
+1. ID
+   - SHAP Value: -2.2519
+   - This feature decreases the prediction by 2.2519 hours
+
+
+================================================================================
+3. ANSWERING USER QUESTIONS
+================================================================================
+
+WHY did the model predict -2.04 hours?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The prediction was primarily driven by:
+  • Weight <= 69.00 (value: N/A) decreased the prediction by 23.1816 hours
+  • Disciplinary failure <= 0.00 (value: N/A) increased the prediction by 18.9446 hours
+  • Weight (value: 69.0) decreased the prediction by 9.5452 hours
+  • Body mass index (value: 24.0) increased the prediction by 8.5711 hours
+  • 23.00 < Body mass index <= 25.00 (value: N/A) increased the prediction by 8.5001 hours
+
+
+WHY NOT a different value?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The model didn't predict a higher/lower value because:
+  • Some features pushed the prediction UP: Disciplinary failure <= 0.00, Body mass index, 23.00 < Body mass index <= 25.00
+  • Other features pulled it DOWN: Weight <= 69.00, Weight
+  • The final prediction (-2.04 hours) is the net result
+
+
+WHAT IF we changed feature values?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Based on the model coefficients, changing features would have these effects:
+
+================================================================================
+4. KEY INSIGHTS FOR USERS
+================================================================================
+
+GLOBAL INSIGHTS:
+• The model identifies Body mass index as the most important 
+  global driver of absenteeism predictions.
+• The top 5 features together explain a significant portion of the model's decisions.
+• Features with positive coefficients increase predicted absenteeism, while negative 
+  coefficients decrease it.
+
+LOCAL INSIGHTS (for this instance):
+• The prediction of -2.04 hours was primarily driven by 
+  Weight <= 69.00 (-23.1816 hours contribution).
+• The model's reasoning aligns with the feature values: this instance has specific 
+  characteristics that led to this prediction.
+• The error of 3.04 hours 
+  suggests the model is reasonably accurate for this type of case.
+
+RECOMMENDATIONS:
+• Use these explanations to understand model trustworthiness.
+• Consider the top features when making decisions about workplace policies.
+• Remember: predictions are estimates, not certainties.
+• Check fairness metrics to ensure the model treats all groups fairly.
+
+================================================================================
+END OF REPORT
+================================================================================

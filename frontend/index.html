@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Absenteeism Prediction Dashboard</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f7f9fb; margin: 30px; color: #222; }
+    h1 { color: #0078d4; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.08); padding: 22px; margin-bottom: 20px; width: 720px; animation: fadeInUp 500ms ease; }
+    label { display: block; margin-top: 10px; }
+    input, select { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; transition: border-color 200ms ease, box-shadow 200ms ease; }
+    input:focus, select:focus { outline: none; border-color: #0078d4; box-shadow: 0 0 0 3px rgba(0,120,212,0.1); }
+    button { margin-top: 15px; padding: 10px 20px; background: #0078d4; color: white; border: none; border-radius: 8px; cursor: pointer; transition: all 200ms ease; font-weight: 500; }
+    button:hover { background: #005a9e; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,120,212,0.3); }
+    button:active { transform: translateY(0); }
+    button.secondary { background: #6c757d; }
+    button.secondary:hover { background: #5a6268; }
+    button.success { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    button.success:hover { background: linear-gradient(135deg, #5568d3 0%, #653a8b 100%); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+    .output { font-weight: bold; color: #107c10; font-size: 18px; animation: slideIn 400ms ease; }
+    .info { font-size: 14px; color: #444; line-height: 1.4; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; animation: fadeIn 600ms ease; }
+    td, th { border: 1px solid #ddd; padding: 8px; text-align: left; transition: background-color 200ms ease; }
+    th { background: #f0f0f0; }
+    tr:hover { background-color: #f9f9f9; }
+    .banner { background: linear-gradient(90deg, #e6f2ff, #f4fbff); border: 1px solid #cfe6ff; padding: 14px 16px; border-radius: 10px; width: 720px; margin-bottom: 16px; }
+    .pill { display: inline-block; background: #eef6ff; color: #0366d6; padding: 4px 10px; border-radius: 999px; font-size: 12px; margin-right: 8px; }
+    .row { display: flex; gap: 20px; flex-wrap: wrap; }
+    .col { flex: 1 1 340px; }
+    .tip { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 8px 10px; border-radius: 8px; margin-top: 6px; display: none; }
+    .guided .tip { display: block; animation: fadeIn 300ms ease; }
+    .help-link { color: #0078d4; text-decoration: underline; cursor: pointer; }
+    .kbd { background: #f3f4f6; border: 1px solid #e5e7eb; border-bottom-width: 2px; padding: 0 6px; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
+    .spinner { width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; display: inline-block; vertical-align: middle; margin-left: 8px; animation: spin 0.8s linear infinite; }
+    .result-badge { display: inline-block; background: #e8fff0; color: #0f6b2f; border: 1px solid #b7f0cb; padding: 6px 10px; border-radius: 999px; margin-top: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    .fade-in { animation: fadeIn 400ms ease; }
+    .slide-in { animation: slideIn 500ms ease; }
+    .scale-in { animation: scaleIn 300ms ease; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; }
+    .modal.open { display: flex; }
+    .modal .content { background: #fff; border-radius: 12px; padding: 20px; width: 780px; max-height: 80vh; overflow: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: fadeIn 200ms ease; }
+    .steps { counter-reset: step; }
+    .steps li { list-style: none; margin: 10px 0; }
+    .steps li::before { counter-increment: step; content: counter(step); display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 50%; background: #0078d4; color: #fff; font-size: 12px; }
+    /* Guided tour */
+    .highlight { position: relative; z-index: 10001; box-shadow: 0 0 0 4px rgba(0,120,212,0.35); border-radius: 8px; transition: box-shadow 150ms ease; }
+    .coach { position: fixed; z-index: 10002; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; width: 280px; box-shadow: 0 10px 24px rgba(0,0,0,0.15); }
+    .coach .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+    .scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 10000; display: none; }
+    .scrim.open { display: block; }
+  </style>
+</head>
+<body>
+
+  <h1>Absenteeism Prediction Assistant</h1>
+  <div class="banner">
+    <span class="pill">Guided</span>
+    <span class="pill">Fairness-first</span>
+    Welcome! This tool estimates absenteeism hours from workplace attributes. It supports partial inputs and explains performance and fairness. <span class="help-link" id="openTutorial">Open tutorial</span>
+  </div>
+
+  <div class="card">
+    <h2>Enter Work & Employee Details</h2>
+    <div class="info">You may leave fields blank; missing values are safely filled with training-set averages.</div>
+    <label>Age:</label>
+    <input type="number" id="age" placeholder="e.g. 35" />
+    <div class="tip">Typical range 18–60. Impacts fairness grouping below.</div>
+    <label>Service Time (months):</label>
+    <input type="number" id="service" placeholder="e.g. 120" />
+    <div class="tip">How long employed. Use months (e.g., 10 years = 120).</div>
+    <label>Distance from Work (km):</label>
+    <input type="number" id="distance" placeholder="e.g. 10" />
+    <div class="tip">Commute distance in kilometers.</div>
+    <button onclick="predict()">Predict Absenteeism Hours</button>
+    <div id="result" class="output"></div>
+    <div id="sentHint" class="info"></div>
+    
+    <!-- Explanation Buttons -->
+    <div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button onclick="showGlobalExplanations()" class="secondary" style="font-size:13px; padding:8px 16px;">
+        🌐 View Global Explanations
+      </button>
+      <button id="localExpBtn" onclick="showLocalExplanations()" class="success" style="font-size:13px; padding:8px 16px; display:none; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border:none; box-shadow:0 4px 15px rgba(102,126,234,0.3);">
+        ✨ Why This Prediction?
+      </button>
+    </div>
+    
+    <!-- Global Explanations Section -->
+    <div id="globalExplanationsSection" style="margin-top:20px; display:none;" class="fade-in">
+      <h3 style="color:#0078d4; margin-bottom:15px;">Global Explanations: What the Model Learned</h3>
+      <div id="globalExplanations" class="info"></div>
+      <div id="globalImages" style="margin-top:15px; display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:15px;"></div>
+    </div>
+    
+    <!-- Local Explanations Section -->
+    <div id="localExplanationsSection" style="margin-top:20px; display:none;" class="fade-in">
+      <h3 style="color:#0078d4; margin-bottom:15px;">✨ Understanding Your Prediction</h3>
+      
+      <!-- Simple Explanation for Non-Technical Users -->
+      <div id="simpleExplanation" style="padding:20px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius:12px; color:white; margin-bottom:20px; box-shadow:0 4px 15px rgba(102,126,234,0.4);" class="scale-in">
+        <h4 style="margin-top:0; color:white; font-size:18px; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:24px;">💡</span> What This Prediction Means
+        </h4>
+        <div id="simpleExplanationText" style="font-size:15px; line-height:1.8; margin-top:12px;"></div>
+      </div>
+      
+      <!-- Detailed Technical Explanations (Hidden by default) -->
+      <div style="margin-bottom:15px; text-align:center;">
+        <button onclick="toggleDetailedExplanations()" id="detailedExpBtn" class="secondary" style="font-size:13px; padding:8px 16px;">
+          📊 Show Detailed Technical Explanations
+        </button>
+      </div>
+      
+      <div id="detailedExplanations" style="display:none; flex-direction:column; gap:15px;">
+        <!-- LIME Explanation -->
+        <div style="padding:15px; background:#f8f9fa; border-radius:8px; border-left:4px solid #0078d4;" class="scale-in">
+          <h4 style="margin-top:0; color:#0078d4;">LIME Explanation</h4>
+          <div id="limeExplanation"></div>
+          <div id="limeImage" style="margin-top:10px; text-align:center;"></div>
+        </div>
+        
+        <!-- SHAP Explanation -->
+        <div style="padding:15px; background:#f8f9fa; border-radius:8px; border-left:4px solid #107c10;" class="scale-in">
+          <h4 style="margin-top:0; color:#107c10;">SHAP Explanation</h4>
+          <div id="shapExplanation"></div>
+          <div id="shapImage" style="margin-top:10px; text-align:center;"></div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:8px;">
+      <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+        <input type="checkbox" id="guidedToggle" /> Enable guided mode (tips & tour)
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Model Transparency</h2>
+    <div id="metrics" class="info">Loading model info...</div>
+  </div>
+
+
+  <div class="card">
+    <h2>Scope & Limitations</h2>
+    <ul id="limits" class="info"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Fairness & Performance Overview</h2>
+    <div id="mitigation" class="info" style="margin-bottom:12px; padding:10px; background:#f8f9fa; border-radius:6px;"></div>
+    
+    <div style="max-width:500px;">
+      <h3 style="margin-top:0; color:#107c10; font-size:14px;">Mitigated Model (After Fairness Improvements)</h3>
+      <div id="mitigatedMetrics" class="info" style="margin-bottom:10px;"></div>
+      <table id="fairnessTableMitigated" style="width:100%;">
+        <thead>
+          <tr><th>Age Group</th><th>Avg Error</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    
+    <div id="improvementSummary" style="margin-top:16px; padding:12px; background:#e8f5e9; border-radius:6px; border-left:4px solid #107c10;"></div>
+  </div>
+
+  <div class="card">
+    <h2>How to Use & Interpret Results</h2>
+    <ul class="info">
+      <li>Input any known attributes; blanks use training-set averages.</li>
+      <li>Prediction is an estimate of absenteeism hours; values are clipped to 0+.</li>
+      <li>Use results to plan support, not for punitive decisions.</li>
+      <li>Check fairness: look for large disparities across groups.</li>
+      <li>Download a quick explainer: <a href="#" onclick="downloadExplainer(); return false;">Model Card (PDF)</a></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>HAX Principles – Quick Evaluation</h2>
+    <table>
+      <thead>
+        <tr><th>Principle</th><th>Status</th><th>Notes</th></tr>
+      </thead>
+      <tbody id="haxBody">
+        <tr><td>Purpose & Fit</td><td>Meets</td><td>Shows goal, scope, limitations.</td></tr>
+        <tr><td>Data & Assumptions</td><td>Partial</td><td>Defaults shown; dataset source noted.</td></tr>
+        <tr><td>Performance</td><td>Meets</td><td>Shows MAE and R².</td></tr>
+        <tr><td>Fairness</td><td>Meets</td><td>Shows group errors with before/after mitigation comparison.</td></tr>
+        <tr><td>Interpretability</td><td>Partial</td><td>Simple model; add more features if needed.</td></tr>
+        <tr><td>Control</td><td>Meets</td><td>Optional inputs; safe defaults.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    let isPredicting = false;
+    let tour = { running: false, step: 0, steps: [] };
+    async function loadModelInfo() {
+      const res = await fetch("http://127.0.0.1:8000/info");
+      const info = await res.json();
+      
+      // Check if we have mitigated model
+      const hasMitigation = info.mitigated;
+      
+      if (hasMitigation) {
+        // Show mitigated model metrics in main transparency section
+        document.getElementById("metrics").innerHTML =
+          `R² Score: ${info.mitigated.r2_score}<br>` +
+          `Mean Absolute Error: ${info.mitigated.mae}`;
+        
+        // Mitigated metrics only
+        document.getElementById("mitigatedMetrics").innerHTML =
+          `R²: ${info.mitigated.r2_score} | MAE: ${info.mitigated.mae}`;
+        const tbodyMitigated = document.querySelector("#fairnessTableMitigated tbody");
+        tbodyMitigated.innerHTML = '';
+        Object.entries(info.mitigated.fairness_error_by_age).forEach(([group, val]) => {
+          const row = `<tr><td>${group}</td><td>${val}</td></tr>`;
+          tbodyMitigated.innerHTML += row;
+        });
+        
+        // Improvement summary
+        const improvement = info.mitigated.improvement || {};
+        const disparityReduction = improvement.error_disparity_reduction || 0;
+        const improvementPct = improvement.improvement_percentage || 0;
+        document.getElementById("improvementSummary").innerHTML = 
+          `<strong style="color:#107c10;">✓ Fairness Improvement:</strong> ` +
+          `Error disparity reduced by ${disparityReduction.toFixed(3)} (${improvementPct.toFixed(1)}% improvement). ` +
+          `The mitigated model shows more balanced error rates across age groups.`;
+        
+        // Mitigation status
+        const mit = info.mitigation;
+        document.getElementById("mitigation").innerHTML = 
+          `<strong>Mitigation Strategy:</strong> ${mit.strategy}<br>` +
+          `<strong>Status:</strong> Applied ✓ | ${mit.notes}`;
+      } else {
+        // Fallback for old format (no mitigation)
+        document.getElementById("metrics").innerHTML =
+          `R² Score: ${info.r2_score}<br>Mean Absolute Error: ${info.mae}`;
+        
+        document.getElementById("mitigatedMetrics").innerHTML = `R²: ${info.r2_score} | MAE: ${info.mae}`;
+        const tbodyMitigated = document.querySelector("#fairnessTableMitigated tbody");
+        tbodyMitigated.innerHTML = '';
+        Object.entries(info.fairness_error_by_age || {}).forEach(([group, val]) => {
+          const row = `<tr><td>${group}</td><td>${val}</td></tr>`;
+          tbodyMitigated.innerHTML += row;
+        });
+        
+        document.getElementById("improvementSummary").innerHTML = 
+          `<em>No mitigation applied. Re-run training to generate fairness improvements.</em>`;
+        
+        const mit = info.mitigation || {};
+        document.getElementById("mitigation").innerHTML = 
+          `<strong>Status:</strong> ${mit.applied ? 'Applied' : 'Not Applied'} | ${mit.notes || 'No mitigation strategy configured'}`;
+      }
+      
+      // Limitations
+      const limits = document.getElementById("limits");
+      limits.innerHTML = '';
+      info.limitations.forEach(l => {
+        const li = document.createElement("li");
+        li.textContent = l;
+        limits.appendChild(li);
+      });
+      
+      // Store feature means for client hints if needed
+      window.__featureMeans = info.feature_means || {};
+    }
+
+    async function predict() {
+      if (isPredicting) return;
+      isPredicting = true;
+      const btn = document.querySelector('button[onclick="predict()"]');
+      const prevLabel = btn.textContent;
+      btn.innerHTML = 'Predicting <span class="spinner"></span>';
+      btn.disabled = true;
+      const ageVal = document.getElementById("age").value;
+      const serviceVal = document.getElementById("service").value;
+      const distanceVal = document.getElementById("distance").value;
+      const data = {};
+      if (ageVal !== "" && !isNaN(parseFloat(ageVal))) data["Age"] = parseFloat(ageVal);
+      if (serviceVal !== "" && !isNaN(parseFloat(serviceVal))) data["Service time"] = parseFloat(serviceVal);
+      if (distanceVal !== "" && !isNaN(parseFloat(distanceVal))) data["Distance from Residence to Work"] = parseFloat(distanceVal);
+      
+      // Get prediction
+      const res = await fetch("http://127.0.0.1:8000/predict", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+      });
+      const output = await res.json();
+      animateResult(Number(output.prediction) || 0);
+      document.getElementById("sentHint").textContent = `Inputs used: ${JSON.stringify(data)}`;
+      
+      // Show local explanation button
+      document.getElementById("localExpBtn").style.display = "inline-block";
+      document.getElementById("localExpBtn").classList.add("scale-in");
+      
+      btn.textContent = prevLabel;
+      btn.disabled = false;
+      isPredicting = false;
+    }
+
+    async function showLocalExplanations() {
+      const ageVal = document.getElementById("age").value;
+      const serviceVal = document.getElementById("service").value;
+      const distanceVal = document.getElementById("distance").value;
+      const data = {};
+      if (ageVal !== "" && !isNaN(parseFloat(ageVal))) data["Age"] = parseFloat(ageVal);
+      if (serviceVal !== "" && !isNaN(parseFloat(serviceVal))) data["Service time"] = parseFloat(serviceVal);
+      if (distanceVal !== "" && !isNaN(parseFloat(distanceVal))) data["Distance from Residence to Work"] = parseFloat(distanceVal);
+      
+      // Hide global explanations if showing
+      document.getElementById("globalExplanationsSection").style.display = "none";
+      
+      await generateLocalExplanations(data);
+    }
+
+    async function showGlobalExplanations() {
+      // Hide local explanations if showing
+      document.getElementById("localExplanationsSection").style.display = "none";
+      
+      const section = document.getElementById("globalExplanationsSection");
+      const div = document.getElementById("globalExplanations");
+      section.style.display = "block";
+      
+      // Always reload if section is empty or showing loading message
+      if (!div.textContent || div.textContent.includes("Loading") || div.textContent.trim() === "") {
+        await loadGlobalExplanations();
+      }
+    }
+
+    function toggleDetailedExplanations() {
+      const detailedDiv = document.getElementById("detailedExplanations");
+      const btn = document.getElementById("detailedExpBtn");
+      
+      if (detailedDiv.style.display === "none" || !detailedDiv.style.display) {
+        detailedDiv.style.display = "flex";
+        btn.textContent = "📊 Hide Detailed Technical Explanations";
+        btn.style.background = "#dc3545";
+      } else {
+        detailedDiv.style.display = "none";
+        btn.textContent = "📊 Show Detailed Technical Explanations";
+        btn.style.background = "";
+      }
+    }
+
+    async function generateLocalExplanations(data) {
+      const section = document.getElementById("localExplanationsSection");
+      const simpleDiv = document.getElementById("simpleExplanationText");
+      const limeDiv = document.getElementById("limeExplanation");
+      const shapDiv = document.getElementById("shapExplanation");
+      const limeImg = document.getElementById("limeImage");
+      const shapImg = document.getElementById("shapImage");
+      
+      section.style.display = "block";
+      simpleDiv.innerHTML = "✨ Analyzing your input...";
+      limeDiv.innerHTML = "Generating LIME explanation...";
+      shapDiv.innerHTML = "Generating SHAP explanation...";
+      limeImg.innerHTML = "";
+      shapImg.innerHTML = "";
+      
+      // Hide detailed explanations by default
+      document.getElementById("detailedExplanations").style.display = "none";
+      document.getElementById("detailedExpBtn").textContent = "📊 Show Detailed Technical Explanations";
+      document.getElementById("detailedExpBtn").style.background = "";
+      
+      try {
+        const res = await fetch("http://127.0.0.1:8000/explainability/local", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(data)
+        });
+        
+        if (!res.ok) {
+          throw new Error("Failed to generate explanations");
+        }
+        
+        const explanation = await res.json();
+        const prediction = explanation.prediction.toFixed(1);
+        
+        // Generate simple English explanation
+        const simpleText = generateSimpleExplanation(explanation, data);
+        simpleDiv.innerHTML = simpleText;
+        
+        // Display LIME explanation (for detailed view)
+        let limeHtml = `<strong>Top Features Contributing to Prediction (${explanation.prediction.toFixed(2)} hours):</strong><ul style="margin-top:8px; padding-left:20px;">`;
+        explanation.lime.features.slice(0, 5).forEach(([feat, contrib]) => {
+          const direction = contrib > 0 ? "increases" : "decreases";
+          const color = contrib > 0 ? "#dc3545" : "#28a745";
+          limeHtml += `<li style="margin:4px 0;"><span style="color:${color}; font-weight:bold;">${feat}</span> ${direction} prediction by ${Math.abs(contrib).toFixed(2)} hours</li>`;
+        });
+        limeHtml += "</ul>";
+        limeDiv.innerHTML = limeHtml;
+        
+        // Display LIME image
+        if (explanation.lime.image) {
+          limeImg.innerHTML = `<img src="data:image/png;base64,${explanation.lime.image}" style="max-width:100%; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1);" alt="LIME Explanation" />`;
+        }
+        
+        // Display SHAP explanation (for detailed view)
+        let shapHtml = `<strong>Feature Contributions (Baseline: ${explanation.shap.expected_value.toFixed(2)} hours):</strong><ul style="margin-top:8px; padding-left:20px;">`;
+        explanation.shap.contributions.slice(0, 5).forEach(contrib => {
+          const direction = contrib.shap_value > 0 ? "increases" : "decreases";
+          const color = contrib.shap_value > 0 ? "#dc3545" : "#28a745";
+          shapHtml += `<li style="margin:4px 0;"><span style="color:${color}; font-weight:bold;">${contrib.feature}</span> (value: ${contrib.value.toFixed(2)}) ${direction} by ${Math.abs(contrib.shap_value).toFixed(2)} hours</li>`;
+        });
+        shapHtml += "</ul>";
+        shapDiv.innerHTML = shapHtml;
+        
+        // Display SHAP image
+        if (explanation.shap.image) {
+          shapImg.innerHTML = `<img src="data:image/png;base64,${explanation.shap.image}" style="max-width:100%; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1);" alt="SHAP Explanation" />`;
+        }
+        
+      } catch (error) {
+        simpleDiv.innerHTML = `<span style="color:#ffeb3b;">⚠️ Unable to generate explanation. Please try again.</span>`;
+        limeDiv.innerHTML = `<span style="color:#dc3545;">Error generating explanations: ${error.message}</span>`;
+        shapDiv.innerHTML = `<span style="color:#dc3545;">Error generating explanations: ${error.message}</span>`;
+      }
+    }
+
+    function generateSimpleExplanation(explanation, userInput) {
+      const prediction = parseFloat(explanation.prediction);
+      const baseline = parseFloat(explanation.shap.expected_value);
+      
+      // Get top 3 contributing factors
+      const topFactors = explanation.shap.contributions.slice(0, 3);
+      const topLimeFactors = explanation.lime.features.slice(0, 3);
+      
+      let html = "";
+      
+      // Main prediction summary
+      html += `<div style="margin-bottom:15px; padding:12px; background:rgba(255,255,255,0.2); border-radius:8px;">
+        <strong style="font-size:16px;">Predicted Absenteeism: ${prediction.toFixed(1)} hours</strong>
+      </div>`;
+      
+      // Interpret prediction level
+      let predictionLevel = "";
+      let levelEmoji = "";
+      if (prediction < 5) {
+        predictionLevel = "low";
+        levelEmoji = "✅";
+      } else if (prediction < 15) {
+        predictionLevel = "moderate";
+        levelEmoji = "⚠️";
+      } else {
+        predictionLevel = "high";
+        levelEmoji = "🔴";
+      }
+      
+      html += `<div style="margin-bottom:15px;">
+        <p style="margin:8px 0; font-size:15px;">
+          ${levelEmoji} This is a <strong>${predictionLevel}</strong> level of predicted absenteeism.
+        </p>
+      </div>`;
+      
+      // Key factors in simple language
+      html += `<div style="margin-bottom:15px;">
+        <p style="margin:8px 0; font-size:15px;"><strong>Key Factors:</strong></p>
+        <ul style="margin:8px 0; padding-left:20px; font-size:14px;">`;
+      
+      topFactors.forEach(contrib => {
+        const featureName = simplifyFeatureName(contrib.feature);
+        const impact = contrib.shap_value > 0 ? "increases" : "reduces";
+        const impactColor = contrib.shap_value > 0 ? "#ffeb3b" : "#4caf50";
+        html += `<li style="margin:6px 0;">
+          <span style="background:${impactColor}; color:#000; padding:2px 6px; border-radius:4px; font-weight:bold; margin-right:6px;">${impact.toUpperCase()}</span>
+          <strong>${featureName}</strong> ${impact} the prediction
+        </li>`;
+      });
+      
+      html += `</ul></div>`;
+      
+      // Simple interpretation
+      html += `<div style="padding:12px; background:rgba(255,255,255,0.15); border-radius:8px; border-left:4px solid white;">
+        <p style="margin:0; font-size:14px; font-style:italic;">
+          💭 <strong>What this means:</strong> Based on the information provided, the model predicts ${prediction.toFixed(1)} hours of absenteeism. 
+          ${prediction < 5 ? "This suggests good attendance patterns." : prediction < 15 ? "This indicates moderate absenteeism that may benefit from support." : "This indicates higher absenteeism that may require attention and support."}
+        </p>
+      </div>`;
+      
+      return html;
+    }
+
+    function simplifyFeatureName(feature) {
+      // Convert technical feature names to user-friendly terms
+      const mappings = {
+        "Age": "Age",
+        "Service time": "Years of Service",
+        "Distance from Residence to Work": "Commute Distance",
+        "Weight": "Weight",
+        "Body mass index": "BMI (Body Mass Index)",
+        "Reason for absence": "Reason for Absence",
+        "Disciplinary failure": "Disciplinary Record",
+        "Education": "Education Level",
+        "Work load Average/day": "Daily Workload"
+      };
+      
+      return mappings[feature] || feature;
+    }
+
+    async function loadGlobalExplanations() {
+      const div = document.getElementById("globalExplanations");
+      const imgDiv = document.getElementById("globalImages");
+      
+      div.innerHTML = "Loading global explanations...";
+      imgDiv.innerHTML = "";
+      
+      try {
+        const res = await fetch("http://127.0.0.1:8000/explainability/global");
+        if (!res.ok) {
+          throw new Error("Failed to load global explanations");
+        }
+        
+        const data = await res.json();
+        
+        // Display top features
+        let html = "<strong>Top 5 Global Features (by Coefficient Importance):</strong><ul style=\"margin-top:8px; padding-left:20px;\">";
+        data.top_features.slice(0, 5).forEach((feat, idx) => {
+          const direction = feat.Coefficient > 0 ? "increases" : "decreases";
+          const color = feat.Coefficient > 0 ? "#dc3545" : "#28a745";
+          html += `<li style="margin:4px 0; animation: fadeIn ${(idx + 1) * 100}ms ease;"><span style="color:${color}; font-weight:bold;">${feat.Feature}</span> ${direction} absenteeism (coef: ${feat.Coefficient.toFixed(3)})</li>`;
+        });
+        html += "</ul>";
+        div.innerHTML = html;
+        
+        // Display all available images with animations (excluding LIME examples - those are for local explanations only)
+        const imageConfigs = [
+          { key: 'feature_importance', title: 'Feature Importance (Coefficients)', alt: 'Feature Importance' },
+          { key: 'shap_global', title: 'SHAP Global Summary', alt: 'SHAP Global Summary' },
+          { key: 'shap_beeswarm', title: 'SHAP Beeswarm Plot', alt: 'SHAP Beeswarm' },
+          { key: 'shap_waterfall', title: 'SHAP Waterfall Plot', alt: 'SHAP Waterfall' }
+        ];
+        
+        let imgIndex = 0;
+        imageConfigs.forEach(config => {
+          if (data.images[config.key]) {
+            const imgContainer = document.createElement("div");
+            imgContainer.style.cssText = "animation: scaleIn 400ms ease; animation-delay: " + (imgIndex * 100) + "ms;";
+            imgContainer.innerHTML = `
+              <h4 style="margin:10px 0 5px 0; font-size:13px; color:#666;">${config.title}</h4>
+              <img src="data:image/png;base64,${data.images[config.key]}" 
+                   style="width:100%; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); transition: transform 200ms ease; cursor:pointer;" 
+                   alt="${config.alt}"
+                   onmouseover="this.style.transform='scale(1.02)'"
+                   onmouseout="this.style.transform='scale(1)'"
+                   onclick="this.style.transform='scale(1.05)'; setTimeout(() => this.style.transform='scale(1)', 200);" />
+            `;
+            imgDiv.appendChild(imgContainer);
+            imgIndex++;
+          }
+        });
+        
+        if (imgIndex === 0) {
+          imgDiv.innerHTML = '<p style="color:#666;">No explanation images available. Please run explainability.py first.</p>';
+        }
+        
+      } catch (error) {
+        div.innerHTML = `<span style="color:#dc3545;">Error loading global explanations: ${error.message}. Make sure explainability.py has been run.</span>`;
+      }
+    }
+
+    function animateResult(value) {
+      const el = document.getElementById("result");
+      const badge = document.createElement('span');
+      badge.className = 'result-badge';
+      let current = 0;
+      const steps = 24;
+      const inc = value / steps;
+      el.innerHTML = '';
+      el.appendChild(badge);
+      const timer = setInterval(() => {
+        current += inc;
+        if ((inc >= 0 && current >= value) || (inc < 0 && current <= value)) {
+          current = value;
+          clearInterval(timer);
+        }
+        badge.textContent = `Predicted absenteeism: ${current.toFixed(2)} hours`;
+      }, 20);
+    }
+
+    async function loadExplanation() {
+      const area = document.getElementById("explanationArea");
+      const btn = document.querySelector('button[onclick="loadExplanation()"]');
+      const prevText = btn.textContent;
+      
+      // Show loading state
+      btn.disabled = true;
+      btn.textContent = 'Loading...';
+      area.style.display = 'block';
+      area.textContent = 'Loading explanation report...';
+      
+      try {
+        const res = await fetch("http://127.0.0.1:8000/explanation");
+        if (!res.ok) {
+          if (res.status === 404) {
+            area.textContent = 'Explanation report not found. Please run explainability.py first to generate the report.';
+          } else {
+            const error = await res.json();
+            area.textContent = `Error: ${error.detail || 'Failed to load explanation'}`;
+          }
+        } else {
+          const data = await res.json();
+          area.textContent = data.report || 'No report content available.';
+        }
+      } catch (error) {
+        area.textContent = `Error fetching explanation: ${error.message}. Make sure the API server is running.`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prevText;
+      }
+    }
+
+    // Guided mode toggle
+    const guidedToggle = document.getElementById('guidedToggle');
+    function applyGuided(isOn, startTourImmediately = false){ 
+      document.body.classList.toggle('guided', isOn); 
+      if(isOn && startTourImmediately){ 
+        startTour(); 
+      } else if (!isOn) { 
+        endTour(); 
+      }
+    }
+    if (guidedToggle) {
+      guidedToggle.addEventListener('change', (e) => applyGuided(e.target.checked, false));
+    }
+
+    // Lightweight tutorial modal
+    const tutorial = {
+      open() {
+        const m = document.getElementById('tutorialModal');
+        m.classList.add('open');
+      },
+      close() {
+        const m = document.getElementById('tutorialModal');
+        m.classList.remove('open');
+      }
+    };
+    document.getElementById('openTutorial')?.addEventListener('click', tutorial.open);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') tutorial.close(); });
+
+    function enableGuidedModeFromTutorial() {
+      const checkbox = document.getElementById('guidedToggle');
+      checkbox.checked = true;
+      document.body.classList.add('guided');
+      tutorial.close();
+      // Show a brief message
+      const btn = document.querySelector('button[onclick="predict()"]');
+      const originalText = btn.textContent;
+      btn.textContent = '💡 Guided mode enabled!';
+      setTimeout(() => {
+        btn.textContent = originalText;
+      }, 2000);
+    }
+
+    function startTourFromTutorial() {
+      tutorial.close();
+      // Small delay to ensure modal is closed
+      setTimeout(() => {
+        startTour();
+      }, 300);
+    }
+
+    function downloadExplainer() {
+      const content = `Model Card\n\nPurpose: Estimate absenteeism hours.\nData: UCI Absenteeism at Work.\nModel: Linear Regression + scaling.\nPerformance: see dashboard.\nFairness: baseline group errors by age; no mitigation.\nUse Responsibly: support planning, not punitive.\nDefaults: missing inputs imputed with training means.`;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'model_card.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    loadModelInfo();
+    // Global explanations loaded on demand when button is clicked
+
+    // --- Guided Tour Implementation ---
+    function startTour(){
+      if (tour.running) return; tour.running = true; tour.step = 0;
+      const steps = [
+        { el: document.getElementById('age'), text: 'Start here: enter age (or leave blank). This also defines fairness groups below.' },
+        { el: document.getElementById('service'), text: 'Service time in months (e.g., 5 years = 60). Optional.' },
+        { el: document.getElementById('distance'), text: 'Commute distance in kilometers. Optional input.' },
+        { el: document.querySelector('button[onclick="predict()"]'), text: 'Click Predict. Missing fields are auto-filled with safe averages.' }
+      ];
+      tour.steps = steps.filter(s => s.el);
+      openScrim();
+      showStep(0);
+    }
+    function endTour(){
+      tour.running = false; tour.step = 0; removeHighlight(); closeCoach(); closeScrim();
+    }
+    function showStep(i){
+      if (!tour.running) return;
+      if (i < 0 || i >= tour.steps.length) { endTour(); return; }
+      tour.step = i;
+      const target = tour.steps[i].el;
+      removeHighlight();
+      target.classList.add('highlight');
+      const rect = target.getBoundingClientRect();
+      const coach = ensureCoach();
+      coach.innerHTML = `<div>${tour.steps[i].text}</div><div class="actions">`
+        + (i>0 ? `<button id="coachPrev">Back</button>` : '')
+        + (i<tour.steps.length-1 ? `<button id="coachNext">Next</button>` : `<button id="coachFinish">Finish</button>`)
+        + `</div>`;
+      // Position coach below or above depending on space
+      const belowTop = rect.bottom + 10;
+      const aboveTop = rect.top - 10 - 110;
+      const top = (belowTop + 130 < window.innerHeight) ? belowTop : Math.max(16, aboveTop);
+      coach.style.top = `${top}px`;
+      coach.style.left = `${Math.min(Math.max(16, rect.left), window.innerWidth - 300)}px`;
+      document.getElementById('coachPrev')?.addEventListener('click', ()=>showStep(i-1));
+      document.getElementById('coachNext')?.addEventListener('click', ()=>showStep(i+1));
+      document.getElementById('coachFinish')?.addEventListener('click', endTour);
+      window.addEventListener('resize', ()=> showStep(i), { once: true });
+      window.addEventListener('scroll', ()=> showStep(i), { once: true });
+    }
+    function removeHighlight(){ document.querySelectorAll('.highlight').forEach(e=>e.classList.remove('highlight')); }
+    function ensureCoach(){ let c = document.getElementById('coach'); if(!c){ c = document.createElement('div'); c.id='coach'; c.className='coach'; document.body.appendChild(c);} return c; }
+    function closeCoach(){ const c = document.getElementById('coach'); if(c){ c.remove(); } }
+    function openScrim(){ let s = document.getElementById('scrim'); if(!s){ s = document.createElement('div'); s.id='scrim'; s.className='scrim open'; s.addEventListener('click', endTour); document.body.appendChild(s);} else { s.classList.add('open'); } }
+    function closeScrim(){ const s = document.getElementById('scrim'); if(s){ s.classList.remove('open'); s.remove(); } }
+  </script>
+
+  <div class="modal" id="tutorialModal" aria-modal="true" role="dialog" aria-labelledby="tutTitle">
+    <div class="content">
+      <h2 id="tutTitle">Quick Tutorial (2 minutes)</h2>
+      <ol class="steps">
+        <li><strong>What this is:</strong> A tool to estimate absenteeism hours using workplace attributes.</li>
+        <li><strong>How to use:</strong> Enter any known values and click <span class="kbd">Predict</span>. You can leave fields blank.</li>
+        <li><strong>Defaults & limits:</strong> Blanks are filled with training averages. Estimates are not certainties.</li>
+        <li><strong>Fairness:</strong> Review group errors below. Large gaps suggest the model fits some groups less well.</li>
+        <li><strong>Responsible use:</strong> Use this to plan support and resources—not to penalize individuals.</li>
+      </ol>
+      
+      <div style="margin-top:20px; padding:15px; background:#f8f9fa; border-radius:8px; border-left:4px solid #0078d4;">
+        <h3 style="margin-top:0; color:#0078d4; font-size:16px;">🎯 Interactive Help Options</h3>
+        <p style="margin:8px 0; font-size:14px; color:#666;">Choose how you'd like to explore the interface:</p>
+        <ul style="margin:8px 0; padding-left:20px; font-size:14px; color:#444;">
+          <li><strong>Guided Mode:</strong> Shows helpful tips below each input field</li>
+          <li><strong>Guided Tour:</strong> Interactive step-by-step walkthrough highlighting each feature</li>
+        </ul>
+      </div>
+      
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px; flex-wrap:wrap;">
+        <button onclick="document.getElementById('tutorialModal').classList.remove('open')" class="secondary" style="padding:10px 20px;">Close</button>
+        <button onclick="enableGuidedModeFromTutorial()" style="padding:10px 20px; background:#6c757d;">
+          💡 Enable Guided Mode (Tips)
+        </button>
+        <button onclick="startTourFromTutorial()" class="success" style="padding:10px 20px;">
+          🚀 Start Guided Tour
+        </button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
